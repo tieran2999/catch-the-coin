@@ -1,153 +1,486 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>catch the coin!</title>
+  <title>Catch the Coin!</title>
 
-<style>
-  body {
-    background-image: url("mario friends.jpg");
-    background-size: cover;
-    background-position: center;
-    background-repeat: no-repeat;
-    min-height: 100vh;
-  }
+  <style>
+    body {
+      background-image: url("mario friends.jpg");
+      background-size: cover;
+      background-position: center;
+      background-repeat: no-repeat;
+      min-height: 100vh;
+      font-family: Arial, sans-serif;
+    }
 
-#star {
-  width: 70px;
-  height: 70px;
-  background-image: url("coin.webp");
-  background-size: contain;
-  background-position: center;
-  background-repeat: no-repeat;
-  background-color: transparent;
-  border: none;
-  cursor: pointer;
-  position: absolute;
-}
+    #star {
+      width: 70px;
+      height: 70px;
+      background-image: url("coin.webp");
+      background-size: contain;
+      background-position: center;
+      background-repeat: no-repeat;
+      background-color: transparent;
+      border: none;
+      cursor: pointer;
+      position: absolute;
+    }
 
-.spin {
-  animation: coinSpin 0.3s;
-}
+    .spin {
+      animation: coinSpin 0.3s;
+    }
 
-@keyframes coinSpin {
-  0% {
-    transform: rotateY(0deg) scale(1);
-  }
+    @keyframes coinSpin {
+      0% {
+        transform: rotateY(0deg) scale(1);
+      }
 
-  50% {
-    transform: rotateY(180deg) scale(1.4);
-  }
+      50% {
+        transform: rotateY(180deg) scale(1.4);
+      }
 
-  100% {
-    transform: rotateY(360deg) scale(1);
-  }
-} 
+      100% {
+        transform: rotateY(360deg) scale(1);
+      }
+    }
 
-  #gameInfo {
-    background-color: rgba(255, 255, 255, 0.7);
-    padding: 10px 20px;
-    margin: 10px;
-    border-radius: 15px;
-    display: inline-block;
-  }
+    #gameInfo {
+      background-color: rgba(255, 255, 255, 0.8);
+      padding: 10px 20px;
+      margin: 10px;
+      border-radius: 15px;
+      display: inline-block;
+      min-width: 260px;
+    }
 
-</style>
+    #leaderboard {
+      margin-top: 20px;
+      padding-top: 10px;
+      border-top: 2px solid black;
+    }
+
+    #highScores {
+      padding-left: 30px;
+    }
+
+    #highScores li {
+      margin: 5px 0;
+      font-weight: bold;
+    }
+
+    #playerName {
+      padding: 8px;
+      font-size: 16px;
+      width: 180px;
+      border-radius: 6px;
+      border: 1px solid #555;
+    }
+
+    .gameButton {
+      padding: 8px 12px;
+      margin-top: 8px;
+      font-size: 15px;
+      cursor: pointer;
+      border-radius: 8px;
+      border: 1px solid #333;
+    }
+
+    #scoreMessage {
+      font-weight: bold;
+    }
+  </style>
 </head>
+
 <body>
 
   <div id="gameInfo">
-    <h1>Catch the coin!</h1>
-    <h3>made by Tieran</h3>
+
+    <h1>Catch the Coin!</h1>
+    <h3>Made by Tieran</h3>
+
     <p id="score">Score: 0</p>
     <p id="timer">Time: 20</p>
-    <div id="gameOver" style="display:none;">
-      <h2>GAME OVER!</h2>
-      <p id="finalScore"></p>
-    <button onclick="restartGame()">🔄 RETRY</button>
-</div>
 
+
+    <!-- GAME OVER AREA -->
+
+    <div id="gameOver" style="display:none;">
+
+      <h2>GAME OVER!</h2>
+
+      <p id="finalScore"></p>
+
+      <input
+        id="playerName"
+        type="text"
+        maxlength="20"
+        placeholder="Enter your name"
+      >
+
+      <br>
+
+      <button
+        id="submitScoreButton"
+        class="gameButton"
+        onclick="submitScore()"
+      >
+        🏆 SUBMIT SCORE
+      </button>
+
+      <p id="scoreMessage"></p>
+
+      <button
+        class="gameButton"
+        onclick="restartGame()"
+      >
+        🔄 RETRY
+      </button>
+
+    </div>
+
+
+    <!-- LEADERBOARD -->
+
+    <div id="leaderboard">
+
+      <h2>🏆 TOP 10 🏆</h2>
+
+      <ol id="highScores">
+        <li>Loading scores...</li>
+      </ol>
+
+    </div>
 
   </div>
 
-    <button id="star" onclick="getPoint()"></button>  
+
+  <!-- COIN -->
+
+  <button id="star" onclick="getPoint()"></button>
 
 
+  <!-- SUPABASE -->
 
-<script>
-  let score = 0;
-  let timeLeft = 20;
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
-  function getPoint() {
+
+  <script>
+
+    // -----------------------------
+    // SUPABASE CONNECTION
+    // -----------------------------
+
+    const SUPABASE_URL =
+      "https://vmfxowgrvzltzenofbup.supabase.co";
+
+    const SUPABASE_KEY =
+      "sb_publishable_X96-ZflB42qIdZ7hU3QUyQ_ZL15gnz_";
+
+    const db = supabase.createClient(
+      SUPABASE_URL,
+      SUPABASE_KEY
+    );
+
+
+    // -----------------------------
+    // GAME VARIABLES
+    // -----------------------------
+
+    let score = 0;
+    let timeLeft = 20;
+    let scoreSubmitted = false;
+
+
+    // -----------------------------
+    // CLICK THE COIN
+    // -----------------------------
+
+    function getPoint() {
+
       score = score + 1;
+
       playDing();
 
-      document.getElementById("score").innerText = "Score: " + score;
+      document.getElementById("score").innerText =
+        "Score: " + score;
 
       let star = document.getElementById("star");
 
+
+      // Spin animation
+
       star.classList.remove("spin");
+
       void star.offsetWidth;
+
       star.classList.add("spin");
 
-      star.style.position = "absolute";
-      star.style.left = Math.random() * 80 + "%";
-      star.style.top = Math.random() * 80 + "%";
+
+      // Move coin
+
+      star.style.left =
+        Math.random() * 80 + "%";
+
+      star.style.top =
+        Math.random() * 80 + "%";
     }
 
-function playDing() {
-  const audio = new AudioContext();
 
-  const sound1 = audio.createOscillator();
-  const sound2 = audio.createOscillator();
+    // -----------------------------
+    // COIN SOUND
+    // -----------------------------
 
-  const volume = audio.createGain();
+    function playDing() {
 
-  sound1.type = "square";
-  sound2.type = "square";
+      const audio = new AudioContext();
 
-  sound1.frequency.value = 900;
-  sound2.frequency.value = 1350;
+      const sound1 =
+        audio.createOscillator();
 
-  sound1.connect(volume);
-  sound2.connect(volume);
-  volume.connect(audio.destination);
+      const sound2 =
+        audio.createOscillator();
 
-  volume.gain.setValueAtTime(0.15, audio.currentTime);
-  volume.gain.exponentialRampToValueAtTime(
-    0.01,
-    audio.currentTime + 0.15
-  );
-
-  sound1.start(audio.currentTime);
-  sound1.stop(audio.currentTime + 0.08);
-
-  sound2.start(audio.currentTime + 0.07);
-  sound2.stop(audio.currentTime + 0.15);
-}
+      const volume =
+        audio.createGain();
 
 
-let timer = setInterval(function() {
-    timeLeft = timeLeft - 1;
-    document.getElementById("timer").innerText = "Time: " + timeLeft;
+      sound1.type = "square";
+      sound2.type = "square";
 
-    if (timeLeft <= 0) {
-      clearInterval(timer);
 
-      document.getElementById("star").style.display = "none";
-      document.getElementById("gameOver").style.display = "block";
-      document.getElementById("finalScore").innerText =
-        "Your score was " + score;
+      sound1.frequency.value = 900;
+      sound2.frequency.value = 1350;
+
+
+      sound1.connect(volume);
+      sound2.connect(volume);
+
+      volume.connect(audio.destination);
+
+
+      volume.gain.setValueAtTime(
+        0.15,
+        audio.currentTime
+      );
+
+      volume.gain.exponentialRampToValueAtTime(
+        0.01,
+        audio.currentTime + 0.15
+      );
+
+
+      sound1.start(audio.currentTime);
+
+      sound1.stop(
+        audio.currentTime + 0.08
+      );
+
+
+      sound2.start(
+        audio.currentTime + 0.07
+      );
+
+      sound2.stop(
+        audio.currentTime + 0.15
+      );
     }
-  }, 1000);
 
 
-  function restartGame() {
-    location.reload();
-  }
+    // -----------------------------
+    // GAME TIMER
+    // -----------------------------
 
-</script>
+    let timer = setInterval(function() {
+
+      timeLeft = timeLeft - 1;
+
+      document.getElementById("timer").innerText =
+        "Time: " + timeLeft;
 
 
+      if (timeLeft <= 0) {
+
+        clearInterval(timer);
+
+        document.getElementById("star").style.display =
+          "none";
+
+        document.getElementById("gameOver").style.display =
+          "block";
+
+        document.getElementById("finalScore").innerText =
+          "Your score was " + score;
+
+      }
+
+    }, 1000);
+
+
+    // -----------------------------
+    // SUBMIT SCORE
+    // -----------------------------
+
+    async function submitScore() {
+
+      if (scoreSubmitted) {
+        return;
+      }
+
+
+      const name =
+        document
+          .getElementById("playerName")
+          .value
+          .trim();
+
+
+      const message =
+        document.getElementById("scoreMessage");
+
+
+      const button =
+        document.getElementById(
+          "submitScoreButton"
+        );
+
+
+      if (name === "") {
+
+        message.innerText =
+          "⚠️ Please enter your name!";
+
+        return;
+      }
+
+
+      button.disabled = true;
+
+      message.innerText =
+        "Saving score...";
+
+
+      const { error } = await db
+        .from("leaderboard")
+        .insert([
+          {
+            name: name,
+            score: score
+          }
+        ]);
+
+
+      if (error) {
+
+        console.log(error);
+
+        message.innerText =
+          "❌ Could not save your score.";
+
+        button.disabled = false;
+
+        return;
+      }
+
+
+      scoreSubmitted = true;
+
+      message.innerText =
+        "🎉 Score submitted!";
+
+      button.innerText =
+        "✅ SCORE SAVED";
+
+
+      // Reload leaderboard immediately
+
+      await loadLeaderboard();
+    }
+
+
+    // -----------------------------
+    // LOAD TOP 10
+    // -----------------------------
+
+    async function loadLeaderboard() {
+
+      const { data, error } = await db
+        .from("leaderboard")
+        .select("name, score")
+        .order("score", {
+          ascending: false
+        })
+        .limit(10);
+
+
+      if (error) {
+
+        console.log(error);
+
+        document.getElementById(
+          "highScores"
+        ).innerHTML =
+          "<li>Could not load scores.</li>";
+
+        return;
+      }
+
+
+      const list =
+        document.getElementById(
+          "highScores"
+        );
+
+
+      list.innerHTML = "";
+
+
+      if (data.length === 0) {
+
+        list.innerHTML =
+          "<li>No scores yet!</li>";
+
+        return;
+      }
+
+
+      data.forEach(function(player) {
+
+        const item =
+          document.createElement("li");
+
+
+        item.textContent =
+          player.name +
+          " — " +
+          player.score +
+          " points";
+
+
+        list.appendChild(item);
+      });
+
+    }
+
+
+    // -----------------------------
+    // RETRY
+    // -----------------------------
+
+    function restartGame() {
+
+      location.reload();
+
+    }
+
+
+    // -----------------------------
+    // LOAD LEADERBOARD
+    // WHEN PAGE OPENS
+    // -----------------------------
+
+    loadLeaderboard();
+
+  </script>
 
 </body>
 </html>
