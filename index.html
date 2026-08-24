@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>catch the coin!</title>
+
+<style>
+  body {
+    background-image: url("mario friends.jpg");
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    min-height: 100vh;
+  }
+
+#star {
+  width: 70px;
+  height: 70px;
+  background-image: url("coin.webp");
+  background-size: contain;
+  background-position: center;
+  background-repeat: no-repeat;
+  background-color: transparent;
+  border: none;
+  cursor: pointer;
+  position: absolute;
+}
+
+.spin {
+  animation: coinSpin 0.3s;
+}
+
+@keyframes coinSpin {
+  0% {
+    transform: rotateY(0deg) scale(1);
+  }
+
+  50% {
+    transform: rotateY(180deg) scale(1.4);
+  }
+
+  100% {
+    transform: rotateY(360deg) scale(1);
+  }
+} 
+
+  #gameInfo {
+    background-color: rgba(255, 255, 255, 0.7);
+    padding: 10px 20px;
+    margin: 10px;
+    border-radius: 15px;
+    display: inline-block;
+  }
+
+</style>
+</head>
+<body>
+
+  <div id="gameInfo">
+    <h1>Catch the coin!</h1>
+    <h3>made by Tieran</h3>
+    <p id="score">Score: 0</p>
+    <p id="timer">Time: 20</p>
+    <div id="gameOver" style="display:none;">
+      <h2>GAME OVER!</h2>
+      <p id="finalScore"></p>
+    <button onclick="restartGame()">🔄 RETRY</button>
+</div>
+
+
+  </div>
+
+    <button id="star" onclick="getPoint()"></button>  
+
+
+
+<script>
+  let score = 0;
+  let timeLeft = 20;
+
+  function getPoint() {
+      score = score + 1;
+      playDing();
+
+      document.getElementById("score").innerText = "Score: " + score;
+
+      let star = document.getElementById("star");
+
+      star.classList.remove("spin");
+      void star.offsetWidth;
+      star.classList.add("spin");
+
+      star.style.position = "absolute";
+      star.style.left = Math.random() * 80 + "%";
+      star.style.top = Math.random() * 80 + "%";
+    }
+
+function playDing() {
+  const audio = new AudioContext();
+
+  const sound1 = audio.createOscillator();
+  const sound2 = audio.createOscillator();
+
+  const volume = audio.createGain();
+
+  sound1.type = "square";
+  sound2.type = "square";
+
+  sound1.frequency.value = 900;
+  sound2.frequency.value = 1350;
+
+  sound1.connect(volume);
+  sound2.connect(volume);
+  volume.connect(audio.destination);
+
+  volume.gain.setValueAtTime(0.15, audio.currentTime);
+  volume.gain.exponentialRampToValueAtTime(
+    0.01,
+    audio.currentTime + 0.15
+  );
+
+  sound1.start(audio.currentTime);
+  sound1.stop(audio.currentTime + 0.08);
+
+  sound2.start(audio.currentTime + 0.07);
+  sound2.stop(audio.currentTime + 0.15);
+}
+
+
+let timer = setInterval(function() {
+    timeLeft = timeLeft - 1;
+    document.getElementById("timer").innerText = "Time: " + timeLeft;
+
+    if (timeLeft <= 0) {
+      clearInterval(timer);
+
+      document.getElementById("star").style.display = "none";
+      document.getElementById("gameOver").style.display = "block";
+      document.getElementById("finalScore").innerText =
+        "Your score was " + score;
+    }
+  }, 1000);
+
+
+  function restartGame() {
+    location.reload();
+  }
+
+</script>
+
+
+
+</body>
+</html>
